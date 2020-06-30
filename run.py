@@ -7,7 +7,7 @@ import pystan
 import numpy as np
 import matplotlib.pyplot as plt
 
-from models.binary_model import model as binary_model
+from models.binary_models import basic_binary_model, binary_vigilance_model
 
 
 def main():
@@ -23,8 +23,8 @@ def main():
                       help='Number of sampling iterations: default=%default')
     parser.add_option('--chains', type=int, default=3,
                       help='Number of sampling chains: default=%default')
-    #parser.add_option('--by-issue', action="store_true", default=False,
-    #                  help='Divide data by issue: default=%default')
+    parser.add_option('--vigilance', action="store_true", default=False,
+                      help='Use worker vigilance term: default=%default')
 
     (options, args) = parser.parse_args()
 
@@ -34,6 +34,7 @@ def main():
     id_field = options.id_field
     response_field = options.response_field
     annotator_field = options.annotator_field
+    use_vigilance = options.vigilance
 
     with open(infile) as f:
         lines = f.readlines()
@@ -95,7 +96,10 @@ def main():
         responses.append(response_dict[line[response_field]])
 
     if n_response_types == 2:
-        model = binary_model
+        if use_vigilance:
+            model = binary_vigilance_model
+        else:
+            model = basic_binary_model
     else:
         raise NotImplementedError("Only the binary model is currently implemented")
 
@@ -113,19 +117,20 @@ def main():
     item_std = fit.extract('item_std')['item_std']
     annotator_offsets = fit.extract('annotator_offsets')['annotator_offsets']
     offset_std = fit.extract('offset_std')['offset_std']
-    vigilance = fit.extract('vigilance')['vigilance']
-
-    np.savez(os.path.join(outdir, 'samples.npz'),
-             item_means=item_means,
-             item_std=item_std,
-             annotator_offsets=annotator_offsets,
-             offset_std=offset_std,
-             vigilance=vigilance)
-
-    fig, ax = plt.subplots()
-    for a in range(n_annotators):
-        ax.plot(vigilance[:, a])
-    plt.savefig(os.path.join(outdir, 'vigilance.pdf'), bbox_inches='tight')
+    if use_vigilance:
+        vigilance = fit.extract('vigilance')['vigilance']
+        np.savez(os.path.join(outdir, 'samples.npz'),
+                 item_means=item_means,
+                 item_std=item_std,
+                 annotator_offsets=annotator_offsets,
+                 offset_std=offset_std,
+                 vigilance=vigilance)
+    else:
+        np.savez(os.path.join(outdir, 'samples.npz'),
+                 item_means=item_means,
+                 item_std=item_std,
+                 annotator_offsets=annotator_offsets,
+                 offset_std=offset_std)
 
 
 if __name__ == '__main__':
