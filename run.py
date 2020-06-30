@@ -69,9 +69,21 @@ def main():
     n_response_types = len(response_counter)
     n_total_responses = len(lines)
 
-    item_dict = dict(zip(sorted(item_counter), range(len(item_counter))))
-    annotator_dict = dict(zip(sorted(annotator_counter), range(len(annotator_counter))))
-    response_dict = dict(zip(sorted(response_counter), range(len(response_counter))))
+    # get a sorted list of possibilities
+    item_list = sorted(item_counter)
+    annotator_list = sorted(annotator_counter)
+    response_list = sorted(response_counter)
+
+    with open(os.path.join(outdir, 'data.json'), 'w') as f:
+        json.dump({'item_list': item_list,
+                   'annotator_list': annotator_list,
+                   'response_list': response_list},
+                  f)
+
+    # convert each to a dictionary
+    item_dict = dict(zip(item_list, range(len(item_list))))
+    annotator_dict = dict(zip(annotator_list, range(len(annotator_list))))
+    response_dict = dict(zip(response_list, range(len(response_list))))
 
     items = []
     annotators = []
@@ -93,9 +105,6 @@ def main():
             'annotator_for_response': [a + 1 for a in annotators],
             'item_for_response': [i + 1 for i in items],
             'responses': responses}
-
-    with open(os.path.join(outdir, 'data.json'), 'w') as f:
-        json.dump(data, f)
 
     sm = pystan.StanModel(model_code=model)
     fit = sm.sampling(data=data, iter=options.iter, chains=options.chains)
