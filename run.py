@@ -5,7 +5,7 @@ from collections import Counter
 
 import pystan
 import numpy as np
-import matplotlib.pyplot as plt
+from scipy.special import expit
 
 from models.binary_models import basic_binary_model, binary_vigilance_model
 
@@ -131,6 +131,7 @@ def main():
                  item_std=item_std,
                  annotator_offsets=annotator_offsets,
                  offset_std=offset_std)
+
 
 
 if __name__ == '__main__':
