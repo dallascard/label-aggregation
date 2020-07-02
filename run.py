@@ -132,6 +132,11 @@ def main():
                  annotator_offsets=annotator_offsets,
                  offset_std=offset_std)
 
+    item_prob_samples = expit(item_means)
+    est_item_probs = {item: float(np.mean(item_prob_samples[:, i])) for i, item in enumerate(item_list)}
+
+    with open(os.path.join(outdir, 'item_probs.json'), 'w') as f:
+        json.dump(est_item_probs, f, indent=2)
 
 
 if __name__ == '__main__':
