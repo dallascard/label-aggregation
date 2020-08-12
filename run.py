@@ -8,6 +8,7 @@ import numpy as np
 from scipy.special import expit
 
 from models.binary_models import basic_binary_model, binary_vigilance_model
+from models.categorical_models import categorical_vigilance_model
 
 
 def main():
@@ -19,11 +20,11 @@ def main():
                       help='Field with labels (responses): default=%default')
     parser.add_option('--annotator-field', type=str, default='annotator',
                       help='Field with annotator name: default=%default')
-    parser.add_option('--iter', type=int, default=2000,
+    parser.add_option('--iter', type=int, default=4000,
                       help='Number of sampling iterations: default=%default')
-    parser.add_option('--chains', type=int, default=3,
+    parser.add_option('--chains', type=int, default=5,
                       help='Number of sampling chains: default=%default')
-    parser.add_option('--vigilance', action="store_true", default=False,
+    parser.add_option('--no-vigilance', action="store_true", default=False,
                       help='Use worker vigilance term: default=%default')
 
     (options, args) = parser.parse_args()
@@ -34,7 +35,7 @@ def main():
     id_field = options.id_field
     response_field = options.response_field
     annotator_field = options.annotator_field
-    use_vigilance = options.vigilance
+    use_vigilance = not options.no_vigilance
 
     with open(infile) as f:
         lines = f.readlines()
@@ -100,43 +101,81 @@ def main():
             model = binary_vigilance_model
         else:
             model = basic_binary_model
+
+        data = {'n_items': n_items,
+                'n_annotators': n_annotators,
+                'n_total_responses': n_total_responses,
+                'annotator_for_response': [a + 1 for a in annotators],
+                'item_for_response': [i + 1 for i in items],
+                'responses': responses}
+
+        sm = pystan.StanModel(model_code=model)
+        fit = sm.sampling(data=data, iter=options.iter, chains=options.chains)
+
+        item_means = fit.extract('item_means')['item_means']
+        item_std = fit.extract('item_std')['item_std']
+        annotator_offsets = fit.extract('annotator_offsets')['annotator_offsets']
+        offset_std = fit.extract('offset_std')['offset_std']
+        if use_vigilance:
+            vigilance = fit.extract('vigilance')['vigilance']
+            np.savez(os.path.join(outdir, 'samples.npz'),
+                     item_means=item_means,
+                     item_std=item_std,
+                     annotator_offsets=annotator_offsets,
+                     offset_std=offset_std,
+                     vigilance=vigilance)
+        else:
+            np.savez(os.path.join(outdir, 'samples.npz'),
+                     item_means=item_means,
+                     item_std=item_std,
+                     annotator_offsets=annotator_offsets,
+                     offset_std=offset_std)
+
+        item_prob_samples = expit(item_means)
+        est_item_probs = {item: float(np.mean(item_prob_samples[:, i])) for i, item in enumerate(item_list)}
+
+        with open(os.path.join(outdir, 'item_probs.json'), 'w') as f:
+            json.dump(est_item_probs, f, indent=2)
+
     else:
-        raise NotImplementedError("Only the binary model is currently implemented")
+        model = categorical_vigilance_model
 
-    data = {'n_items': n_items,
-            'n_annotators': n_annotators,
-            'n_total_responses': n_total_responses,
-            'annotator_for_response': [a + 1 for a in annotators],
-            'item_for_response': [i + 1 for i in items],
-            'responses': responses}
+        data = {'n_items': n_items,
+                'n_annotators': n_annotators,
+                'n_total_responses': n_total_responses,
+                'n_levels': n_response_types,
+                'annotator_for_response': [a + 1 for a in annotators],
+                'item_for_response': [i + 1 for i in items],
+                'responses': [r + 1 for r in responses]}
 
-    sm = pystan.StanModel(model_code=model)
-    fit = sm.sampling(data=data, iter=options.iter, chains=options.chains)
+        sm = pystan.StanModel(model_code=model)
+        fit = sm.sampling(data=data, iter=options.iter, chains=options.chains)
 
-    item_means = fit.extract('item_means')['item_means']
-    item_std = fit.extract('item_std')['item_std']
-    annotator_offsets = fit.extract('annotator_offsets')['annotator_offsets']
-    offset_std = fit.extract('offset_std')['offset_std']
-    if use_vigilance:
-        vigilance = fit.extract('vigilance')['vigilance']
-        np.savez(os.path.join(outdir, 'samples.npz'),
-                 item_means=item_means,
-                 item_std=item_std,
-                 annotator_offsets=annotator_offsets,
-                 offset_std=offset_std,
-                 vigilance=vigilance)
-    else:
-        np.savez(os.path.join(outdir, 'samples.npz'),
-                 item_means=item_means,
-                 item_std=item_std,
-                 annotator_offsets=annotator_offsets,
-                 offset_std=offset_std)
+        item_means = fit.extract('item_means')['item_means']
+        item_std = fit.extract('item_std')['item_std']
+        annotator_offsets = fit.extract('annotator_offsets')['annotator_offsets']
+        offset_std = fit.extract('offset_std')['offset_std']
+        if use_vigilance:
+            vigilance = fit.extract('vigilance')['vigilance']
+            np.savez(os.path.join(outdir, 'samples.npz'),
+                     item_means=item_means,
+                     item_std=item_std,
+                     annotator_offsets=annotator_offsets,
+                     offset_std=offset_std,
+                     vigilance=vigilance)
+        else:
+            np.savez(os.path.join(outdir, 'samples.npz'),
+                     item_means=item_means,
+                     item_std=item_std,
+                     annotator_offsets=annotator_offsets,
+                     offset_std=offset_std)
 
-    item_prob_samples = expit(item_means)
-    est_item_probs = {item: float(np.mean(item_prob_samples[:, i])) for i, item in enumerate(item_list)}
+        #item_prob_samples = expit(item_means)
+        #est_item_probs = {item: float(np.mean(item_prob_samples[:, i])) for i, item in enumerate(item_list)}
 
-    with open(os.path.join(outdir, 'item_probs.json'), 'w') as f:
-        json.dump(est_item_probs, f, indent=2)
+        #with open(os.path.join(outdir, 'item_probs.json'), 'w') as f:
+        #    json.dump(est_item_probs, f, indent=2)
+
 
 
 if __name__ == '__main__':
