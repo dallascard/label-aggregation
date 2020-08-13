@@ -21,7 +21,8 @@ model {
   items_std ~ normal(0, 1);
   for (i in 1:n_items) {
     for (k in 1:n_levels) { 
-      item_means[i, k] ~ normal(priors[k], items_std);
+      //item_means[i, k] ~ normal(priors[k], items_std);
+      item_means[i, k] ~ normal(0, items_std);
     }
   }
   
