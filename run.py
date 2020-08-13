@@ -5,7 +5,7 @@ from collections import Counter
 
 import pystan
 import numpy as np
-from scipy.special import expit, logit
+from scipy.special import expit, logit, softmax
 
 from models.binary_models import basic_binary_model, binary_vigilance_model
 from models.categorical_models import basic_categorical_model, categorical_vigilance_model
@@ -65,13 +65,6 @@ def main():
         for k, v in annotator_counter.most_common():
             print(k, v)
 
-    if len(response_counter) > 12:
-        print("{:d} response types found".format(len(response_counter)))
-    else:
-        print("Responses:")
-        for k, v in response_counter.most_common():
-            print(k, v)
-
     n_items = len(item_counter)
     n_annotators = len(annotator_counter)
     n_response_types = len(response_counter)
@@ -82,16 +75,26 @@ def main():
     annotator_list = sorted(annotator_counter)
     response_list = sorted(response_counter)
 
-    with open(os.path.join(outdir, 'data.json'), 'w') as f:
-        json.dump({'item_list': item_list,
-                   'annotator_list': annotator_list,
-                   'response_list': response_list},
-                  f)
+    if len(response_counter) > 12:
+        print("{:d} response types found".format(len(response_counter)))
+    else:
+        print("Responses:")
+        for r in response_list:
+            print(r, response_counter[r])
 
     # convert each to a dictionary
     item_dict = dict(zip(item_list, range(len(item_list))))
     annotator_dict = dict(zip(annotator_list, range(len(annotator_list))))
     response_dict = dict(zip(response_list, range(len(response_list))))
+
+    with open(os.path.join(outdir, 'data.json'), 'w') as f:
+        json.dump({'item_list': item_list,
+                   'annotator_list': annotator_list,
+                   'response_list': response_list,
+                   'item_dict': item_dict,
+                   'annotator_dict': annotator_dict,
+                   'response_dict': response_dict},
+                  f)
 
     items = []
     annotators = []
@@ -152,9 +155,9 @@ def main():
         else:
             model = basic_categorical_model
 
-        prior_probs = [response_counter[r] / float(n_total_responses) for r in response_list]
-        priors = [float(logit(p)) for p in prior_probs]
         if use_prior:
+            prior_probs = [response_counter[r] / float(n_total_responses) for r in response_list]
+            priors = [float(np.log(p)) for p in prior_probs]
             print("Using priors:")
             for r_i, r in enumerate(response_list):
                 print(r,  priors[r_i])
@@ -195,12 +198,11 @@ def main():
                      annotator_offsets=annotator_offsets,
                      offset_std=offset_std)
 
-        item_prob_samples = expit(item_means)
+        item_prob_samples = softmax(item_means, axis=2)
         est_item_probs = {item: [float(p) for p in np.mean(item_prob_samples[:, i, :], axis=0)] for i, item in enumerate(item_list)}
 
         with open(os.path.join(outdir, 'item_probs.json'), 'w') as f:
             json.dump(est_item_probs, f, indent=2)
-
 
 
 if __name__ == '__main__':
