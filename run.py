@@ -198,7 +198,8 @@ def main():
                      annotator_offsets=annotator_offsets,
                      offset_std=offset_std)
 
-        item_prob_samples = softmax(item_means, axis=2)
+        mean_annotator_offsets = np.mean(annotator_offsets, 1)
+        item_prob_samples = softmax(item_means + np.expand_dims(mean_annotator_offsets, 1), axis=2)
         est_item_probs = {item: [float(p) for p in np.mean(item_prob_samples[:, i, :], axis=0)] for i, item in enumerate(item_list)}
 
         with open(os.path.join(outdir, 'item_probs.json'), 'w') as f:
