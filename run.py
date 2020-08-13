@@ -140,6 +140,8 @@ def main():
     else:
         model = categorical_vigilance_model
 
+        print(response_counter)
+        print(response_list)
         prior_probs = [response_counter[r] / float(len(response_list)) for r in response_list]
         print(prior_probs)
         priors = [logit(p) for p in prior_probs]
