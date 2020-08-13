@@ -5,7 +5,7 @@ from collections import Counter
 
 import pystan
 import numpy as np
-from scipy.special import expit
+from scipy.special import expit, logit
 
 from models.binary_models import basic_binary_model, binary_vigilance_model
 from models.categorical_models import categorical_vigilance_model
@@ -140,10 +140,14 @@ def main():
     else:
         model = categorical_vigilance_model
 
+        prior_probs = [response_counter[r] / float(len(response_list)) for r in response_list]
+        priors = [logit(p) for p in prior_probs]
+
         data = {'n_items': n_items,
                 'n_annotators': n_annotators,
                 'n_total_responses': n_total_responses,
                 'n_levels': n_response_types,
+                'priors': priors,
                 'annotator_for_response': [a + 1 for a in annotators],
                 'item_for_response': [i + 1 for i in items],
                 'responses': [r + 1 for r in responses]}
