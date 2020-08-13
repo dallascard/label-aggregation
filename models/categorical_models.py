@@ -36,7 +36,7 @@ model {
     vector[n_levels] logits;
     for (k in 1:n_levels) {
         logits[k] = vigilance[annotator_for_response[r]] * item_means[item_for_response[r], k] + (1-vigilance[annotator_for_response[r]]) * annotator_offsets[annotator_for_response[r], k];
-    ratings[r] ~ categorical_logit(logits);  
+    responses[r] ~ categorical_logit(logits);  
   }
 }
 """
