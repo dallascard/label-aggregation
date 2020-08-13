@@ -8,7 +8,7 @@ import numpy as np
 from scipy.special import expit, logit
 
 from models.binary_models import basic_binary_model, binary_vigilance_model
-from models.categorical_models import categorical_vigilance_model
+from models.categorical_models import basic_categorical_model, categorical_vigilance_model
 
 
 def main():
@@ -26,6 +26,8 @@ def main():
                       help='Number of sampling chains: default=%default')
     parser.add_option('--no-vigilance', action="store_true", default=False,
                       help='Use worker vigilance term: default=%default')
+    parser.add_option('--no-prior', action="store_true", default=False,
+                      help='Do not use informative prior on item means: default=%default')
 
     (options, args) = parser.parse_args()
 
@@ -39,6 +41,7 @@ def main():
     response_field = options.response_field
     annotator_field = options.annotator_field
     use_vigilance = not options.no_vigilance
+    use_prior = not options.no_prior
 
     with open(infile) as f:
         lines = f.readlines()
@@ -112,6 +115,9 @@ def main():
                 'item_for_response': [i + 1 for i in items],
                 'responses': responses}
 
+        with open(os.path.join(outdir, 'model_data.json'), 'w') as f:
+            json.dump(data, f)
+
         sm = pystan.StanModel(model_code=model)
         fit = sm.sampling(data=data, iter=options.iter, chains=options.chains)
 
@@ -141,24 +147,31 @@ def main():
             json.dump(est_item_probs, f, indent=2)
 
     else:
-        model = categorical_vigilance_model
+        if use_vigilance:
+            model = categorical_vigilance_model
+        else:
+            model = basic_categorical_model
 
         prior_probs = [response_counter[r] / float(n_total_responses) for r in response_list]
-        print(prior_probs)
-        priors = [logit(p) for p in prior_probs]
-        print(priors)
-        print("Using priors:")
-        for r_i, r in enumerate(response_list):
-            print(r,  priors[r_i])
+        priors = [float(logit(p)) for p in prior_probs]
+        if use_prior:
+            print("Using priors:")
+            for r_i, r in enumerate(response_list):
+                print(r,  priors[r_i])
+        else:
+            priors = [0.] * len(response_counter)
 
-        data = {'n_items': n_items,
-                'n_annotators': n_annotators,
-                'n_total_responses': n_total_responses,
-                'n_levels': n_response_types,
+        data = {'n_items': int(n_items),
+                'n_annotators': int(n_annotators),
+                'n_total_responses': int(n_total_responses),
+                'n_levels': int(n_response_types),
                 'priors': priors,
-                'annotator_for_response': [a + 1 for a in annotators],
-                'item_for_response': [i + 1 for i in items],
-                'responses': [r + 1 for r in responses]}
+                'annotator_for_response': [int(a + 1) for a in annotators],
+                'item_for_response': [int(i + 1) for i in items],
+                'responses': [int(r + 1) for r in responses]}
+
+        with open(os.path.join(outdir, 'model_data.json'), 'w') as f:
+            json.dump(data, f)
 
         sm = pystan.StanModel(model_code=model)
         fit = sm.sampling(data=data, iter=options.iter, chains=options.chains)
@@ -182,11 +195,11 @@ def main():
                      annotator_offsets=annotator_offsets,
                      offset_std=offset_std)
 
-        #item_prob_samples = expit(item_means)
-        #est_item_probs = {item: float(np.mean(item_prob_samples[:, i])) for i, item in enumerate(item_list)}
+        item_prob_samples = expit(item_means)
+        est_item_probs = {item: [float(p) for p in np.mean(item_prob_samples[:, i, :], axis=0)] for i, item in enumerate(item_list)}
 
-        #with open(os.path.join(outdir, 'item_probs.json'), 'w') as f:
-        #    json.dump(est_item_probs, f, indent=2)
+        with open(os.path.join(outdir, 'item_probs.json'), 'w') as f:
+            json.dump(est_item_probs, f, indent=2)
 
 
 
