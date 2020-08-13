@@ -18,10 +18,10 @@ parameters {
 }
 model {
   // Priors
-  q_std ~ normal(0, 1);
+  items_std ~ normal(0, 1);
   for (i in 1:n_items) {
     for (k in 1:n_levels) { 
-      item_means[i, k] ~ normal(priors[k], q_std);
+      item_means[i, k] ~ normal(priors[k], items_std);
     }
   }
   
