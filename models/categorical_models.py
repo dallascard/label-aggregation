@@ -11,17 +11,17 @@ data {
 }
 parameters {
   vector[n_levels] item_means[n_items];
-  real<lower=0> items_std;
+  real<lower=0> item_std;
   vector[n_levels] annotator_offsets[n_annotators];
   real<lower=0, upper=1> vigilance[n_annotators];
   real<lower=0> offset_std;
 }
 model {
   // Priors
-  items_std ~ normal(0, 1);
+  item_std ~ normal(0, 1);
   for (i in 1:n_items) {
     for (k in 1:n_levels) { 
-      //item_means[i, k] ~ normal(priors[k], items_std);
+      //item_means[i, k] ~ normal(priors[k], item_std);
       item_means[i, k] ~ normal(0, items_std);
     }
   }
@@ -36,7 +36,8 @@ model {
   for (r in 1:n_total_responses) {
     vector[n_levels] logits;
     for (k in 1:n_levels) {
-      logits[k] = vigilance[annotator_for_response[r]] * item_means[item_for_response[r], k] + (1-vigilance[annotator_for_response[r]]) * annotator_offsets[annotator_for_response[r], k];
+      //logits[k] = vigilance[annotator_for_response[r]] * item_means[item_for_response[r], k] + (1-vigilance[annotator_for_response[r]]) * annotator_offsets[annotator_for_response[r], k];
+      logits[k] = item_means[item_for_response[r], k]  annotator_offsets[annotator_for_response[r], k];
     }
     responses[r] ~ categorical_logit(logits);  
   }

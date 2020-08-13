@@ -142,6 +142,9 @@ def main():
 
         prior_probs = [response_counter[r] / float(len(response_list)) for r in response_list]
         priors = [logit(p) for p in prior_probs]
+        print("Using priors:")
+        for r_i, r in enumerate(response_list):
+            print(r,  priors[r_i])
 
         data = {'n_items': n_items,
                 'n_annotators': n_annotators,
