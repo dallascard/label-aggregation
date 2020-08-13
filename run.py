@@ -32,6 +32,9 @@ def main():
     infile = args[0]
     outdir = args[1]
 
+    if not os.path.exists(outdir):
+        os.makedirs(outdir)
+
     id_field = options.id_field
     response_field = options.response_field
     annotator_field = options.annotator_field
