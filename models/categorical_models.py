@@ -26,9 +26,9 @@ model {
   }
   
   offset_std ~ normal(0, 1);  
-  for (w in 1:n_workers) {
+  for (a in 1:n_annotators) {
     for (k in 1:n_levels) {
-      annotator_offsets[w] ~ normal(0, offset_std);
+      annotator_offsets[a, k] ~ normal(0, offset_std);
     }
   }
     
