@@ -141,7 +141,9 @@ def main():
         model = categorical_vigilance_model
 
         prior_probs = [response_counter[r] / float(len(response_list)) for r in response_list]
+        print(prior_probs)
         priors = [logit(p) for p in prior_probs]
+        print(priors)
         print("Using priors:")
         for r_i, r in enumerate(response_list):
             print(r,  priors[r_i])
