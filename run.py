@@ -125,6 +125,7 @@ def main():
         fit = sm.sampling(data=data, iter=options.iter, chains=options.chains)
 
         item_means = fit.extract('item_means')['item_means']
+        n_samples, _ = item_means.shape
         item_std = fit.extract('item_std')['item_std']
         annotator_offsets = fit.extract('annotator_offsets')['annotator_offsets']
         offset_std = fit.extract('offset_std')['offset_std']
@@ -143,7 +144,7 @@ def main():
                      annotator_offsets=annotator_offsets,
                      offset_std=offset_std)
 
-        item_prob_samples = expit(item_means)
+        item_prob_samples = expit(item_means + annotator_offsets.mean(1).reshape((n_samples, 1)))
         est_item_probs = {item: float(np.mean(item_prob_samples[:, i])) for i, item in enumerate(item_list)}
 
         with open(os.path.join(outdir, 'item_probs.json'), 'w') as f:
