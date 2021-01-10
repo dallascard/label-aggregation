@@ -18,10 +18,10 @@ def main():
     baseout = 'values_out'
 
     files = sorted(glob(os.path.join(indir, '*.jsonlist')))
-    for infile in files[:2]:
+    for infile in files:
         basename = os.path.basename(infile).split('.')[0]
         outdir = os.path.join(baseout, basename)
-        cmd = ['python', 'run.py', infile, outdir, '--response-field', 'count', '--iter', '10000']
+        cmd = ['python', 'run.py', infile, outdir, '--response-field', 'count', '--counts', '--iter', '10000']
         print(' '.join(cmd))
         call(cmd)
 
