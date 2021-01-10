@@ -145,10 +145,13 @@ def main():
         item_prob_samples = expit(item_means + annotator_offsets.mean(1).reshape((n_samples, 1)))
         est_item_probs = {item: float(np.mean(item_prob_samples[:, i])) for i, item in enumerate(item_list)}
 
+        for i, a in enumerate(annotators):
+            print(a, np.mean(annotator_offsets[:, i]))
+
         with open(os.path.join(outdir, 'item_probs.json'), 'w') as f:
             json.dump(est_item_probs, f, indent=2)
 
-    if n_response_types == 2:
+    elif n_response_types == 2:
         if use_vigilance:
             model = binary_vigilance_model
         else:
