@@ -145,7 +145,7 @@ def main():
         item_prob_samples = expit(item_means + annotator_offsets.mean(1).reshape((n_samples, 1)))
         est_item_probs = {item: float(np.mean(item_prob_samples[:, i])) for i, item in enumerate(item_list)}
 
-        for i, a in enumerate(annotators):
+        for i, a in enumerate(annotator_list):
             print(a, np.mean(annotator_offsets[:, i]))
 
         with open(os.path.join(outdir, 'item_probs.json'), 'w') as f:
