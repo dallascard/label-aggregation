@@ -9,6 +9,7 @@ from scipy.special import expit, logit, softmax
 
 from models.binary_models import basic_binary_model, binary_vigilance_model
 from models.categorical_models import basic_categorical_model, categorical_vigilance_model
+from models.count_models import basic_poisson_model
 
 
 def main():
@@ -28,6 +29,8 @@ def main():
                       help='Use worker vigilance term: default=%default')
     parser.add_option('--no-prior', action="store_true", default=False,
                       help='Do not use informative prior on item means: default=%default')
+    parser.add_option('--counts', action="store_true", default=False,
+                      help='Use a count (Poisson) model instead of categorical: default=%default')
 
     (options, args) = parser.parse_args()
 
@@ -42,6 +45,7 @@ def main():
     annotator_field = options.annotator_field
     use_vigilance = not options.no_vigilance
     use_prior = not options.no_prior
+    use_counts = options.counts
 
     with open(infile) as f:
         lines = f.readlines()
@@ -77,6 +81,8 @@ def main():
 
     if len(response_counter) > 12:
         print("{:d} response types found".format(len(response_counter)))
+        if use_counts:
+            print("Min/max:", min(response_counter), max(response_counter))
     else:
         print("Responses:")
         for r in response_list:
@@ -103,7 +109,44 @@ def main():
     for line in lines:
         items.append(item_dict[line[id_field]])
         annotators.append(annotator_dict[line[annotator_field]])
-        responses.append(response_dict[line[response_field]])
+        if use_counts:
+            responses.append(line[response_field])
+        else:
+            responses.append(response_dict[line[response_field]])
+
+    if use_counts:
+        model = basic_poisson_model
+
+        data = {'n_items': n_items,
+                'n_annotators': n_annotators,
+                'n_total_responses': n_total_responses,
+                'annotator_for_response': [a + 1 for a in annotators],
+                'item_for_response': [i + 1 for i in items],
+                'responses': responses}
+
+        with open(os.path.join(outdir, 'model_data.json'), 'w') as f:
+            json.dump(data, f)
+
+        sm = pystan.StanModel(model_code=model)
+        fit = sm.sampling(data=data, iter=options.iter, chains=options.chains)
+
+        item_means = fit.extract('item_means')['item_means']
+        n_samples, _ = item_means.shape
+        item_std = fit.extract('item_std')['item_std']
+        annotator_offsets = fit.extract('annotator_offsets')['annotator_offsets']
+        offset_std = fit.extract('offset_std')['offset_std']
+        np.savez(os.path.join(outdir, 'samples.npz'),
+                 item_means=item_means,
+                 item_std=item_std,
+                 annotator_offsets=annotator_offsets,
+                 offset_std=offset_std)
+
+        # TODO: add vigilance estimates into this
+        item_prob_samples = expit(item_means + annotator_offsets.mean(1).reshape((n_samples, 1)))
+        est_item_probs = {item: float(np.mean(item_prob_samples[:, i])) for i, item in enumerate(item_list)}
+
+        with open(os.path.join(outdir, 'item_probs.json'), 'w') as f:
+            json.dump(est_item_probs, f, indent=2)
 
     if n_response_types == 2:
         if use_vigilance:
@@ -144,6 +187,7 @@ def main():
                      annotator_offsets=annotator_offsets,
                      offset_std=offset_std)
 
+        # TODO: add vigilance estimates into this
         item_prob_samples = expit(item_means + annotator_offsets.mean(1).reshape((n_samples, 1)))
         est_item_probs = {item: float(np.mean(item_prob_samples[:, i])) for i, item in enumerate(item_list)}
 
@@ -200,6 +244,7 @@ def main():
                      offset_std=offset_std)
 
         mean_annotator_offsets = np.mean(annotator_offsets, 1)
+        # TODO: add vigilance estimates into this
         item_prob_samples = softmax(item_means + np.expand_dims(mean_annotator_offsets, 1), axis=2)
         est_item_probs = {item: [float(p) for p in np.mean(item_prob_samples[:, i, :], axis=0)] for i, item in enumerate(item_list)}
 
