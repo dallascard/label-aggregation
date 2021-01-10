@@ -15,8 +15,8 @@ parameters {
 }
 model {
   // Priors  
-  item_std ~ normal(0, 1);
-  item_means ~ normal(0, item_std);
+  //item_std ~ normal(0, 1);
+  //item_means ~ normal(0, item_std);
   
   offset_std ~ normal(0, 1);    
   for (a in 1:n_annotators) {
