@@ -21,7 +21,7 @@ def main():
     for infile in files:
         basename = os.path.basename(infile).split('.')[0]
         outdir = os.path.join(baseout, basename)
-        cmd = ['python', 'run.py', infile, outdir, '--response-field', 'count', '--counts', '--iter', '10000']
+        cmd = ['python', 'run.py', infile, outdir, '--response-field', 'count', '--counts', '--iter', '10000', '--overdispersed']
         print(' '.join(cmd))
         call(cmd)
 
