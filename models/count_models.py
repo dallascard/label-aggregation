@@ -62,7 +62,7 @@ model {
   for (r in 1:n_total_responses) {
     real mu;
     mu = item_means[item_for_response[r]] + annotator_offsets[annotator_for_response[r]];
-    responses[r] ~ neg_binomial_2_log(mu);  
+    responses[r] ~ neg_binomial_2_log(mu, phi);  
   }
 }
 """
