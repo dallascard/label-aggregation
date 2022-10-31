@@ -3,13 +3,15 @@ import json
 from optparse import OptionParser
 from collections import Counter
 
-import pystan
+import stan
 import numpy as np
 from scipy.special import expit, logit, softmax
 
 from models.binary_models import basic_binary_model, binary_vigilance_model
 from models.categorical_models import basic_categorical_model, categorical_vigilance_model
 from models.count_models import basic_poisson_model, basic_nb_model
+
+### Notes that this script is written for pystan v2.X !!!
 
 
 def main():
@@ -21,8 +23,8 @@ def main():
                       help='Field with labels (responses): default=%default')
     parser.add_option('--annotator-field', type=str, default='annotator',
                       help='Field with annotator name: default=%default')
-    parser.add_option('--iter', type=int, default=4000,
-                      help='Number of sampling iterations: default=%default')
+    parser.add_option('--samples', type=int, default=2000,
+                      help='Number of samples: default=%default')
     parser.add_option('--chains', type=int, default=5,
                       help='Number of sampling chains: default=%default')
     parser.add_option('--no-vigilance', action="store_true", default=False,
@@ -33,6 +35,8 @@ def main():
                       help='Use a count (Poisson) model instead of categorical: default=%default')
     parser.add_option('--overdispersed', action="store_true", default=False,
                       help='Use a Negative Binomial instead of Poisson model: default=%default')
+    parser.add_option('--seed', type=int, default=42,
+                      help='Random seed: default=%default')
 
     (options, args) = parser.parse_args()
 
@@ -48,6 +52,7 @@ def main():
     use_vigilance = not options.no_vigilance
     use_prior = not options.no_prior
     use_counts = options.counts
+    seed = options.seed
 
     with open(infile) as f:
         lines = f.readlines()
@@ -132,14 +137,17 @@ def main():
         with open(os.path.join(outdir, 'model_data.json'), 'w') as f:
             json.dump(data, f)
 
-        sm = pystan.StanModel(model_code=model)
-        fit = sm.sampling(data=data, iter=options.iter, chains=options.chains)
+        posterior = stan.build(model, data=data, random_seed=seed)
+        #sm = pystan.StanModel(model_code=model)
 
-        item_means = fit.extract('item_means')['item_means']
+        fit = posterior.sample(num_chains=options.chains, num_samples=options.samples)
+        #fit = sm.sampling(data=data, iter=options.iter, chains=options.chains)
+
+        item_means = fit['item_means']
         n_samples, _ = item_means.shape
-        item_std = fit.extract('item_std')['item_std']
-        annotator_offsets = fit.extract('annotator_offsets')['annotator_offsets']
-        offset_std = fit.extract('offset_std')['offset_std']
+        item_std = fit['item_std']
+        annotator_offsets = fit['annotator_offsets']
+        offset_std = fit['offset_std']
         np.savez(os.path.join(outdir, 'samples.npz'),
                  item_means=item_means,
                  item_std=item_std,
@@ -172,16 +180,20 @@ def main():
         with open(os.path.join(outdir, 'model_data.json'), 'w') as f:
             json.dump(data, f)
 
-        sm = pystan.StanModel(model_code=model)
-        fit = sm.sampling(data=data, iter=options.iter, chains=options.chains)
 
-        item_means = fit.extract('item_means')['item_means']
+        posterior = stan.build(model, data=data, random_seed=seed)
+        #sm = pystan.StanModel(model_code=model)
+
+        fit = posterior.sample(num_chains=options.chains, num_samples=options.samples)
+        #fit = sm.sampling(data=data, iter=options.iter, chains=options.chains)
+
+        item_means = fit['item_means']
         n_samples, _ = item_means.shape
-        item_std = fit.extract('item_std')['item_std']
-        annotator_offsets = fit.extract('annotator_offsets')['annotator_offsets']
-        offset_std = fit.extract('offset_std')['offset_std']
+        item_std = fit['item_std']
+        annotator_offsets = fit['annotator_offsets']
+        offset_std = fit['offset_std']
         if use_vigilance:
-            vigilance = fit.extract('vigilance')['vigilance']
+            vigilance = ['vigilance']
             np.savez(os.path.join(outdir, 'samples.npz'),
                      item_means=item_means,
                      item_std=item_std,
@@ -229,15 +241,18 @@ def main():
         with open(os.path.join(outdir, 'model_data.json'), 'w') as f:
             json.dump(data, f)
 
-        sm = pystan.StanModel(model_code=model)
-        fit = sm.sampling(data=data, iter=options.iter, chains=options.chains)
+        posterior = stan.build(model, data=data, random_seed=seed)
+        #sm = pystan.StanModel(model_code=model)
 
-        item_means = fit.extract('item_means')['item_means']
-        item_std = fit.extract('item_std')['item_std']
-        annotator_offsets = fit.extract('annotator_offsets')['annotator_offsets']
-        offset_std = fit.extract('offset_std')['offset_std']
+        fit = posterior.sample(num_chains=options.chains, num_samples=options.samples)
+        #fit = sm.sampling(data=data, iter=options.iter, chains=options.chains)
+
+        item_means = fit['item_means']
+        item_std = fit['item_std']
+        annotator_offsets = fit['annotator_offsets']
+        offset_std = fit['offset_std']
         if use_vigilance:
-            vigilance = fit.extract('vigilance')['vigilance']
+            vigilance = fit['vigilance']
             np.savez(os.path.join(outdir, 'samples.npz'),
                      item_means=item_means,
                      item_std=item_std,
