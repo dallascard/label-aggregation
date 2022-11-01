@@ -104,7 +104,6 @@ ENV/
 data
 output
 notebooks
+temp
 
 # IntelliJ
-*.iml
-.idea

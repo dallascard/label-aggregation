@@ -144,7 +144,7 @@ def main():
         #fit = sm.sampling(data=data, iter=options.iter, chains=options.chains)
 
         item_means = fit['item_means']
-        n_samples, _ = item_means.shape
+        _, n_samples = item_means.shape
         item_std = fit['item_std']
         annotator_offsets = fit['annotator_offsets']
         offset_std = fit['offset_std']
@@ -265,6 +265,11 @@ def main():
                      item_std=item_std,
                      annotator_offsets=annotator_offsets,
                      offset_std=offset_std)
+
+        print("Item means:", item_means.shape)
+        print("Item std:", item_std.shape)
+        print("annotator offsets:", annotator_offsets.shape)
+        print("offset_std:", offset_std.shape)
 
         mean_annotator_offsets = np.mean(annotator_offsets, 1)
         # TODO: add vigilance estimates into this
