@@ -274,13 +274,13 @@ def main():
         mean_annotator_offsets = np.mean(annotator_offsets, 0)
         print("mean_annotator_offsets:", mean_annotator_offsets.shape)
         
-        temp = np.expand_dims(mean_annotator_offsets, 1)
+        temp = np.expand_dims(mean_annotator_offsets, 0)
         print("temp:", temp.shape)
         # TODO: add vigilance estimates into this
         item_prob_samples = softmax(item_means + temp, axis=1)
         print("item_prob_samples:", item_prob_samples.shape)
-        
-        est_item_probs = {item: [float(p) for p in np.mean(item_prob_samples[:, i, :], axis=0)] for i, item in enumerate(item_list)}
+
+        est_item_probs = {item: [float(p) for p in np.mean(item_prob_samples[i, :, :], axis=1)] for i, item in enumerate(item_list)}
 
         with open(os.path.join(outdir, 'item_probs.json'), 'w') as f:
             json.dump(est_item_probs, f, indent=2)
