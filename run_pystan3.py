@@ -192,7 +192,7 @@ def main():
         #fit = sm.sampling(data=data, iter=options.iter, chains=options.chains)
 
         item_means = fit['item_means']
-        n_samples, _ = item_means.shape
+        _, n_samples = item_means.shape
         item_std = fit['item_std']
         annotator_offsets = fit['annotator_offsets']
         offset_std = fit['offset_std']
