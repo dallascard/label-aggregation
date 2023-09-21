@@ -157,7 +157,7 @@ def main():
                  offset_std=offset_std)
 
         # TODO: add vigilance estimates into this
-        item_prob_samples = expit(item_means + annotator_offsets.mean(0).reshape((n_samples, 1)))
+        item_prob_samples = expit(item_means + annotator_offsets.mean(0).reshape((1, n_samples)))
         est_item_probs = {item: float(np.mean(item_prob_samples[i, :])) for i, item in enumerate(item_list)}
 
         for i, a in enumerate(annotator_list):
@@ -212,7 +212,7 @@ def main():
                      offset_std=offset_std)
 
         # TODO: add vigilance estimates into this
-        item_prob_samples = expit(item_means + annotator_offsets.mean(0).reshape((n_samples, 1)))
+        item_prob_samples = expit(item_means + annotator_offsets.mean(0).reshape((1, n_samples)))
         est_item_probs = {item: float(np.mean(item_prob_samples[i, :])) for i, item in enumerate(item_list)}
 
         with open(os.path.join(outdir, 'item_probs.json'), 'w') as f:
