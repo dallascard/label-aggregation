@@ -155,6 +155,9 @@ def main():
                  offset_std=offset_std)
 
         # TODO: add vigilance estimates into this
+        print(item_means.shape)
+        print(annotator_offsets.shape)
+        print(n_samples)
         item_prob_samples = expit(item_means + annotator_offsets.mean(1).reshape((n_samples, 1)))
         est_item_probs = {item: float(np.mean(item_prob_samples[:, i])) for i, item in enumerate(item_list)}
 
@@ -279,6 +282,8 @@ def main():
         # TODO: add vigilance estimates into this
         item_prob_samples = softmax(item_means + temp, axis=1)
         print("item_prob_samples:", item_prob_samples.shape)
+
+        print("item_prob_samples[0, :, :]", item_prob_samples[0, :, :].shape)
 
         est_item_probs = {item: [float(p) for p in np.mean(item_prob_samples[i, :, :], axis=1)] for i, item in enumerate(item_list)}
 
