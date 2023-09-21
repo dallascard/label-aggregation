@@ -123,8 +123,10 @@ def main():
 
     if use_counts:
         if options.overdispersed:
+            print("Using basic_nb_model")
             model = basic_nb_model
         else:
+            print("Using basic_poisson_model")
             model = basic_poisson_model
 
         data = {'n_items': n_items,
@@ -155,22 +157,21 @@ def main():
                  offset_std=offset_std)
 
         # TODO: add vigilance estimates into this
-        print(item_means.shape)
-        print(annotator_offsets.shape)
-        print(n_samples)
-        item_prob_samples = expit(item_means + annotator_offsets.mean(1).reshape((n_samples, 1)))
-        est_item_probs = {item: float(np.mean(item_prob_samples[:, i])) for i, item in enumerate(item_list)}
+        item_prob_samples = expit(item_means + annotator_offsets.mean(0).reshape((n_samples, 1)))
+        est_item_probs = {item: float(np.mean(item_prob_samples[i, :])) for i, item in enumerate(item_list)}
 
         for i, a in enumerate(annotator_list):
-            print(a, np.mean(annotator_offsets[:, i]), np.std(annotator_offsets[:, i]))
+            print(a, np.mean(annotator_offsets[i, :]), np.std(annotator_offsets[i, :]))
 
         with open(os.path.join(outdir, 'item_probs.json'), 'w') as f:
             json.dump(est_item_probs, f, indent=2)
 
     elif n_response_types == 2:
         if use_vigilance:
+            print("Using binary_vigilance_model")
             model = binary_vigilance_model
         else:
+            print("Using basic_binary_model")
             model = basic_binary_model
 
         data = {'n_items': n_items,
@@ -211,16 +212,18 @@ def main():
                      offset_std=offset_std)
 
         # TODO: add vigilance estimates into this
-        item_prob_samples = expit(item_means + annotator_offsets.mean(1).reshape((n_samples, 1)))
-        est_item_probs = {item: float(np.mean(item_prob_samples[:, i])) for i, item in enumerate(item_list)}
+        item_prob_samples = expit(item_means + annotator_offsets.mean(0).reshape((n_samples, 1)))
+        est_item_probs = {item: float(np.mean(item_prob_samples[i, :])) for i, item in enumerate(item_list)}
 
         with open(os.path.join(outdir, 'item_probs.json'), 'w') as f:
             json.dump(est_item_probs, f, indent=2)
 
     else:
         if use_vigilance:
+            print("Using categorical_vigilance_model")
             model = categorical_vigilance_model
         else:
+            print("Using basic_categorical_model")
             model = basic_categorical_model
 
         if use_prior:
