@@ -5,7 +5,7 @@ from collections import Counter
 
 import stan
 import numpy as np
-from scipy.special import expit, logit, softmax
+from scipy.special import expit, softmax
 
 from models.binary_models import basic_binary_model, binary_vigilance_model
 from models.categorical_models import basic_categorical_model, categorical_vigilance_model
