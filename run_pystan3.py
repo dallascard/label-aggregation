@@ -286,8 +286,6 @@ def main():
         item_prob_samples = softmax(item_means + temp, axis=1)
         print("item_prob_samples:", item_prob_samples.shape)
 
-        print("item_prob_samples[0, :, :]", item_prob_samples[0, :, :].shape)
-
         est_item_probs = {item: [float(p) for p in np.mean(item_prob_samples[i, :, :], axis=1)] for i, item in enumerate(item_list)}
 
         with open(os.path.join(outdir, 'item_probs.json'), 'w') as f:
