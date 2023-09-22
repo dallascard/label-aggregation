@@ -10,5 +10,5 @@ The updated version of this code uses `numpy`, `scipy` and `pystan=3.7`. To inst
 
 An example dataset has been provided in `data/example.jsonlist`
 To run the script, use:
-`python run_pystan3.py python run_pystan3.py data/example.jsonlist data/`
-This will run the script and output a number of files to `data/`, the most important of which is `item_probs.json`, which contains the estimated label probabilities for each item.
+`python run_pystan3.py python run_pystan3.py data/example.jsonlist output/`
+This will run the script and output a number of files to `output/`, the most important of which is `item_probs.json`, which contains the estimated label probabilities for each item.
