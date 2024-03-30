@@ -10,9 +10,11 @@ data {
   array[n_total_responses] int<lower=1, upper=n_levels> responses;
 }
 parameters {
-  vector[n_levels] item_means[n_items];
+  //vector[n_levels] item_means[n_items];
+  matrix[n_items, n_levels] item_means;
   real<lower=0> item_std;
-  vector[n_levels] annotator_offsets[n_annotators];
+  //vector[n_levels] annotator_offsets[n_annotators];
+  matrix[n_annotators, n_levels] annotator_offsets;
   real<lower=0> offset_std;
 }
 model {
