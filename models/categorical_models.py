@@ -5,9 +5,9 @@ data {
   int<lower=1> n_total_responses;
   int<lower=3> n_levels;
   vector[n_levels] priors;
-  int<lower=1, upper=n_annotators> annotator_for_response[n_total_responses];
-  int<lower=1, upper=n_items> item_for_response[n_total_responses];
-  int<lower=1, upper=n_levels> responses[n_total_responses];
+  array[n_total_responses] int<lower=1, upper=n_annotators> annotator_for_response;
+  arrary[n_total_responses] int<lower=1, upper=n_items> item_for_response;
+  array[n_total_responses] int<lower=1, upper=n_levels> responses;
 }
 parameters {
   vector[n_levels] item_means[n_items];
