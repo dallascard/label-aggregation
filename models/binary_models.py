@@ -3,9 +3,9 @@ data {
   int<lower=1> n_items;
   int<lower=1> n_annotators;
   int<lower=1> n_total_responses;
-  int<lower=1, upper=n_annotators> annotator_for_response[n_total_responses];
-  int<lower=1, upper=n_items> item_for_response[n_total_responses];
-  int responses[n_total_responses];
+  array[n_total_responses] int<lower=1, upper=n_annotators> annotator_for_response;
+  array[n_total_responses] int<lower=1, upper=n_items> item_for_response;
+  array[n_total_responses] int responses;
 }
 parameters {
   vector[n_items] item_means;
